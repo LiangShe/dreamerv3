@@ -53,7 +53,8 @@ def init(
   if print_partition:
     print_grouping(grouping)
 
-  fn = jax.jit(fn, arg_shardings, params_sharding, static_argnums, None)
+  fn = jax.jit(
+      fn, in_shardings=arg_shardings, out_shardings=params_sharding, static_argnums=static_argnums)
   params = fn(*dummy_inputs)
 
   return params, params_sharding
@@ -96,7 +97,7 @@ def apply(
         outs[i] = jax.tree.map(lambda x: x[None], outs[i])
       return tuple(outs)
 
-    from jax.experimental.shard_map import shard_map
+    from jax import shard_map
     ispecs = list(jax.tree.map(lambda s: s.spec, in_shardings))
     for i in sorted(static_argnums):
       ispecs.insert(i, None)
@@ -128,8 +129,10 @@ def apply(
         outs = inner(*args)
         nn.LAYER_CALLBACK = old
       return outs
-
-  fn = jax.jit(fn, in_shardings, out_shardings, static_argnums, None, donate)
+  
+  fn = jax.jit(
+      fn, in_shardings=in_shardings, out_shardings=out_shardings,
+      static_argnums=static_argnums, donate_argnums=donate)
 
   return fn
 

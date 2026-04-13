@@ -1,0 +1,103 @@
+environment:
+  name: "graspj"
+  target_object: "random"
+  target_location_range: 
+    x: [-0.1, 0.1] # x: [-0.2, 0.2]
+    y: [0.7, 0.7] # y: [0.3, 0.7]
+    z: [-0.2, -0.2]
+  render_width: 128
+  render_height: 128
+  render_mode: null # "human","rgb_array","ansi", null to disable for faster training.
+  frame_skip: 1
+  target_threshold: 0.01
+  target_tranlation_objective: [0.0, -0.035, 0.0]
+  max_episode_steps: 1000
+  save_visual_obs: false
+  force_min: 5.0 # grasp force
+  force_max: 30.0 # grasp force
+  feedback:
+    visual: false
+    joint: false
+    touch: false
+  reward:
+    weight_reach: 1.0 # reach reward range ~ 0.3
+    weight_pos: 2.0 # position reward = - distance
+    weight_energy_cost: 0.0
+    
+robot:
+  name: "RightArm_grasp_joystick"
+  initial_joint_angle: 0
+  dof: 25
+  joint_action_step: 0.1 # for discrete action space
+
+model:
+  recurrent: false
+  lstm_hidden_size: 1024
+  n_lstm_layers: 1
+  shared_lstm: false
+
+  use_custom_features_extractor: true 
+  log_std_init: -1.0
+  features_extractor:
+    visual:
+      - layer: "conv2d"
+        filters: 32
+        kernel_size: 8
+        stride: 4
+        activation: "relu"
+      - layer: "conv2d"
+        filters: 64
+        kernel_size: 4
+        stride: 2
+        activation: "relu"
+      - layer: "conv2d"
+        filters: 64
+        kernel_size: 3
+        stride: 1
+        activation: "relu"
+    joint:
+      - layer: "dense"
+        units: 256
+        activation: "relu"
+      - layer: "dense"
+        units: 256
+        activation: "relu"
+    touch:
+      - layer: "dense"
+        units: 512
+        activation: "relu"
+      - layer: "dense"
+        units: 512
+        activation: "relu"
+    combined:
+      - layer: "dense"
+        units: 1024
+        activation: "relu"
+      # - layer: "dense"
+      #   units: 128
+      #   activation: "relu"
+  features_dim: 1024
+  policy_net:
+      pi: [1024,1024] #[512, 512]
+      vf: [1024,1024] #[512, 512]
+
+training:
+  PPO:
+    total_epochs: 1000
+    total_timesteps: 10000000
+    batch_size: 256
+    learning_rate: 0.00002
+    learning_rate_min: 0.000002
+    success_rate_threshold: 0.95
+    update_steps: 40960
+    update_epochs: 16
+    gamma: 0.99
+    clip: 0.1
+    gae_lambda: 0.95
+    entropy_coefficient: 0.0
+    use_sde: false
+    sde_sample_freq: 64
+    
+
+evaluation:
+  num_episodes: 10
